@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8">
-    <title>地图单击拾取经纬度</title>
+    <link rel="shortcut icon" href="#"/>
+    <title>上海YQ地图</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
@@ -50,78 +51,187 @@
             cursor: pointer;
         }    
     </style>
-    <script src="http://api.map.baidu.com/api?type=webgl&v=1.0&ak=funqg3EVEnCeTOdGhuCxaCfZenq6rlW8"></script>
+    <!-- <script src="http://api.map.baidu.com/api?type=webgl&v=1.0&ak=funqg3EVEnCeTOdGhuCxaCfZenq6rlW8"></script> -->
+    <script src="http://api.map.baidu.com/api?v=2.0&ak=funqg3EVEnCeTOdGhuCxaCfZenq6rlW8"></script>
+
 </head>
 <body>
     <div id="container"></div>
     <ul class="btn-wrap" style="z-index: 99;">
-        <li id = "button_today" class = "btn" onclick = "showTodayOverlay()">显示今天</li>
-        <li id = "button_old" class = "btn" onclick = "showOldOverlay()">显示以往</li>
+        <li id = "button_today" class = "btn" onclick = "showTodayOverlay()">显示今天ON</li>
+        <li id = "button_old" class = "btn" onclick = "showOldOverlay()">显示以往OFF</li>
     </ul>    
 </body>
 </html>
 <script>
-var map = new BMapGL.Map('container');
+var map = new BMap.Map('container');
 var preMarker_p=null;
 var preMarker_r=null;
 var showToday = true;
-var showOld = true;
-map.centerAndZoom(new BMapGL.Point(121.480237, 31.236305), 11);
-map.enableScrollWheelZoom(true);
-map.addEventListener('click', function (e) {
-    //alert('点击位置经纬度：' + e.latlng.lng + ',' + e.latlng.lat);
-    if(!e.overlay)
-    {
-        var myIcon_red = new BMapGL.Icon("red.png", new BMapGL.Size(20, 28));
-        var myIcon_purple = new BMapGL.Icon("purple.png", new BMapGL.Size(20, 28));
+var showOld = false;
 
-        var pt_r = new BMapGL.Point(121.36905582265786, 31.075207986948577);
-        var pt_p = new BMapGL.Point(121.37905582265786, 31.085207986948577);        
-        var marker_r=new BMapGL.Marker(pt_r,{icon: myIcon_red})
-        var marker_p=new BMapGL.Marker(pt_p,{icon: myIcon_purple})        
-        map.addOverlay(marker_r);
-        map.addOverlay(marker_p);       
-        preMarker_r=marker_r;
-        preMarker_p=marker_p;        
-    }
+map.centerAndZoom(new BMap.Point(121.480237, 31.236305), 11);
+map.enableScrollWheelZoom(true);
+
+        // 创建定位控件
+        var locationControl = new BMap.GeolocationControl({
+            // 控件的停靠位置（可选，默认左上角）
+            anchor: BMAP_ANCHOR_TOP_RIGHT,
+            // 控件基于停靠位置的偏移量（可选）
+            offset: new BMap.Size(20, 20)
+        });
+        // 将控件添加到地图上
+        map.addControl(locationControl);
+
+        // 添加定位事件
+        locationControl.addEventListener("locationSuccess", function(e){
+            var address = '';
+            address += e.addressComponent.province;
+            address += e.addressComponent.city;
+            address += e.addressComponent.district;
+            address += e.addressComponent.street;
+            address += e.addressComponent.streetNumber;
+            alert("当前定位地址为：" + address);
+        });
+        locationControl.addEventListener("locationError",function(e){
+            alert(e.message);
+        });
+        var myIcon_red = new BMap.Icon("red.png", new BMap.Size(20, 28));
+        var myIcon_purple = new BMap.Icon("purple.png", new BMap.Size(20, 28));
+        //addOldOverlay()          
+        addTodayOverlay()
+      
+// map.addEventListener('click', function (e) {
+//     //alert('点击位置经纬度：' + e.latlng.lng + ',' + e.latlng.lat);
+//     if(!e.overlay)
+//     {
+
+
+//         var pt_r = new BMap.Point(121.36905582265786, 31.075207986948577);
+//         var pt_p = new BMap.Point(121.37905582265786, 31.085207986948577);        
+//         var marker_r=new BMap.Marker(pt_r,{icon: myIcon_red})
+//         var marker_p=new BMap.Marker(pt_p,{icon: myIcon_purple})        
+//         map.addOverlay(marker_r);
+//         map.addOverlay(marker_p);       
+//         preMarker_r=marker_r;
+//         preMarker_p=marker_p;        
+//     }
     
-});
+// });
 var btn_today=document.getElementById('button_today')
 var btn_old=document.getElementById('button_old')
+var pointCollection = null;
+var pointCollectionOld = null;
         function showTodayOverlay() {
             if (showToday)
             {
-                map.removeOverlay(preMarker_r);
-                btn_today.innerHTML ="显示今天off"; 
+
+                if (pointCollection!=null)
+                {
+                    pointCollection.clear();
+                }
+                if (pointCollectionOld!=null)
+                {
+                    pointCollectionOld.clear();
+                }                
+                btn_today.innerHTML ="显示今天OFF"; 
                 showToday = false;
+                if(showOld)
+                {
+                    addOldOverlay();
+                }
             }
             else
             {
                 addTodayOverlay();
-                btn_today.innerHTML ="显示今天on"; 
+                btn_today.innerHTML ="显示今天ON"; 
                 showToday = true;
             }
         }
         function showOldOverlay() {
             if (showOld)
             {
-                map.removeOverlay(preMarker_p);
-                btn_old.innerHTML ="显示以往off";                 
+                if (pointCollection!=null)
+                {
+                    pointCollection.clear();
+                }                
+                if (pointCollectionOld!=null)
+                {
+                    pointCollectionOld.clear();
+                }
+                btn_old.innerHTML ="显示以往OFF";                 
                 showOld = false;
+                if(showToday)
+                {
+                    addTodayOverlay();
+                }                
             }
             else
             {
                 addOldOverlay(); 
-                btn_old.innerHTML ="显示以往on";                 
+                btn_old.innerHTML ="显示以往ON";                 
                 showOld = true;
             }
         }    
-
+        var bias=0.0001
         function addTodayOverlay() {
-            map.addOverlay(preMarker_r);
-        }      
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                var obj = {}     //经纬度以对象形式通过obj存放到locat
+                var points = []   //存放点
+                if (this.readyState == 4 && this.status == 200) {
+                // document.getElementById("demo").innerHTML = this.responseText;
+                    var data = JSON.parse(this.responseText);
+                    //console.log(data);
+                    for(var i = 0; i < data.length; i++){
+                        if(!data[i].status)
+                        {
+                            //console.log(data[i].result.location.lng,data[i].result.location.lat);
+                            points.push(new BMap.Point(data[i].result.location.lng+bias, data[i].result.location.lat+bias))
+                        }
+                    }                    
+                    var options = {
+                        shape: BMAP_POINT_SHAPE_CIRCLE,
+                        color: '#f00',
+                        size: BMAP_POINT_SIZE_NORMAL,
+                       
+                    }
+                    pointCollection = new BMap.PointCollection(points,options);  // 初始化PointCollection
+                    map.addOverlay(pointCollection);  // 添加Overlay                     
+                }
+            };
+            xhttp.open("GET", "today_address.json", true);
+            xhttp.send();
+        }
+   
         function addOldOverlay() {
-            map.addOverlay(preMarker_p);
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                var obj = {}     //经纬度以对象形式通过obj存放到locat
+                var points = []   //存放点
+                if (this.readyState == 4 && this.status == 200) {
+                // document.getElementById("demo").innerHTML = this.responseText;
+                    var data = JSON.parse(this.responseText);
+                    //console.log(data);
+                    for(var i = 0; i < data.length; i++){
+                        if(!data[i].status)
+                        {
+                            //console.log(data[i].result.location.lng,data[i].result.location.lat);
+                            points.push(new BMap.Point(data[i].result.location.lng, data[i].result.location.lat))
+                        }
+                    }                    
+                    var options = {
+                        shape: BMAP_POINT_SHAPE_CIRCLE,
+                        color: 'purple',
+                        size: BMAP_POINT_SIZE_NORMAL,
+                       
+                    }
+                    pointCollectionOld = new BMap.PointCollection(points,options);  // 初始化PointCollection
+                    map.addOverlay(pointCollectionOld);  // 添加Overlay                     
+                }
+            };
+            xhttp.open("GET", "old_address.json", true);
+            xhttp.send();      
         }            
         
 </script>
