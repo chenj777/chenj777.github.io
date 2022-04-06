@@ -59,7 +59,8 @@
     <div id="container"></div>
     <ul class="btn-wrap" style="z-index: 99;">
         <li id = "button_today" class = "btn" onclick = "showTodayOverlay()">显示今天ON</li>
-        <li id = "button_old" class = "btn" onclick = "showOldOverlay()">显示以往OFF</li>
+        <li id = "button_recent" class = "btn" onclick = "showRecentOverlay()">显示4月OFF</li>        
+        <li id = "button_old" class = "btn" onclick = "showOldOverlay()">显示3月OFF</li>
     </ul>    
 </body>
 </html>
@@ -68,6 +69,7 @@ var map = new BMap.Map('container');
 var preMarker_p=null;
 var preMarker_r=null;
 var showToday = true;
+var showRecent = false;
 var showOld = false;
 
 map.centerAndZoom(new BMap.Point(121.480237, 31.236305), 11);
@@ -119,8 +121,10 @@ map.enableScrollWheelZoom(true);
     
 // });
 var btn_today=document.getElementById('button_today')
+var btn_recent=document.getElementById('button_recent')
 var btn_old=document.getElementById('button_old')
 var pointCollection = null;
+var pointCollectionRecent = null;
 var pointCollectionOld = null;
         function showTodayOverlay() {
             if (showToday)
@@ -130,16 +134,24 @@ var pointCollectionOld = null;
                 {
                     pointCollection.clear();
                 }
+                if (pointCollectionRecent!=null)
+                {
+                    pointCollectionRecent.clear();
+                } 
                 if (pointCollectionOld!=null)
                 {
                     pointCollectionOld.clear();
-                }                
+                }                                
                 btn_today.innerHTML ="显示今天OFF"; 
                 showToday = false;
                 if(showOld)
                 {
                     addOldOverlay();
                 }
+                if(showRecent)
+                {
+                    addRecentOverlay();
+                }                
             }
             else
             {
@@ -148,6 +160,42 @@ var pointCollectionOld = null;
                 showToday = true;
             }
         }
+
+        function showRecentOverlay() {
+            if (showRecent)
+            {
+
+                if (pointCollectionRecent!=null)
+                {
+                    pointCollectionRecent.clear();
+                }
+                if (pointCollectionOld!=null)
+                {
+                    pointCollectionOld.clear();
+                }
+                if (pointCollection=null)
+                {
+                    pointCollection.clear();
+                }                                    
+                btn_recent.innerHTML ="显示4月OFF"; 
+                showRecent = false;
+                if(showOld)
+                {
+                    addOldOverlay();
+                }
+                if(showToday)
+                {
+                    addTodayOverlay();
+                }                
+            }
+            else
+            {
+                addRecentOverlay();
+                btn_recent.innerHTML ="显示4月ON"; 
+                showRecent = true;
+            }
+        }
+
         function showOldOverlay() {
             if (showOld)
             {
@@ -159,8 +207,16 @@ var pointCollectionOld = null;
                 {
                     pointCollectionOld.clear();
                 }
-                btn_old.innerHTML ="显示以往OFF";                 
+                if (pointCollectionRecent!=null)
+                {
+                    pointCollectionRecent.clear();
+                }                
+                btn_old.innerHTML ="显示3月OFF";                 
                 showOld = false;
+                if(showRecent)
+                {
+                    addRecentOverlay();
+                }                  
                 if(showToday)
                 {
                     addTodayOverlay();
@@ -169,7 +225,7 @@ var pointCollectionOld = null;
             else
             {
                 addOldOverlay(); 
-                btn_old.innerHTML ="显示以往ON";                 
+                btn_old.innerHTML ="显示3月ON";                 
                 showOld = true;
             }
         }    
@@ -203,7 +259,36 @@ var pointCollectionOld = null;
             xhttp.open("GET", "today_address.json", true);
             xhttp.send();
         }
-   
+        var bias_recent=0.00005        
+        function addRecentOverlay() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                var obj = {}     //经纬度以对象形式通过obj存放到locat
+                var points = []   //存放点
+                if (this.readyState == 4 && this.status == 200) {
+                // document.getElementById("demo").innerHTML = this.responseText;
+                    var data = JSON.parse(this.responseText);
+                    //console.log(data);
+                    for(var i = 0; i < data.length; i++){
+                        if(!data[i].status)
+                        {
+                            //console.log(data[i].result.location.lng,data[i].result.location.lat);
+                            points.push(new BMap.Point(data[i].result.location.lng+bias_recent, data[i].result.location.lat+bias_recent))
+                        }
+                    }                    
+                    var options = {
+                        shape: BMAP_POINT_SHAPE_CIRCLE,
+                        color: 'orange',
+                        size: BMAP_POINT_SIZE_NORMAL,
+                       
+                    }
+                    pointCollectionRecent = new BMap.PointCollection(points,options);  // 初始化PointCollection
+                    map.addOverlay(pointCollectionRecent);  // 添加Overlay                     
+                }
+            };
+            xhttp.open("GET", "recent_address.json", true);
+            xhttp.send();      
+        }          
         function addOldOverlay() {
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
