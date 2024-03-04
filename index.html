@@ -127,12 +127,14 @@ var pointCollection = null;
 var pointCollectionRecent = null;
 var pointCollectionOld = null;
         function showTodayOverlay() {
+            console.log(showToday);            
             if (showToday)
             {
 
                 if (pointCollection!=null)
                 {
                     pointCollection.clear();
+                    console.log("clear pointCollection");   
                 }
                 if (pointCollectionRecent!=null)
                 {
@@ -162,6 +164,7 @@ var pointCollectionOld = null;
         }
 
         function showRecentOverlay() {
+            console.log(showRecent);
             if (showRecent)
             {
 
